@@ -1,0 +1,13 @@
+module.exports = {
+  preset: 'ts-jest',
+  testEnvironment: 'node',
+  testMatch: ['**/tests/**/*.ts'],
+  moduleFileExtensions: ['ts', 'js', 'json'],
+  verbose: true,
+  collectCoverage: false,
+  transform: {
+    '^.+\\.(ts|tsx)$': 'ts-jest',
+  },
+};
+
+
