@@ -142,7 +142,7 @@ export class ContentGenerationService {
 
       // Generate audio using ElevenLabs
       const audioUrl = await ElevenLabsService.generatePodcastAudio(
-        script,
+        script.content,
         job.language
       );
 

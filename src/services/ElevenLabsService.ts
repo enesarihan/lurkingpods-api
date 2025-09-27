@@ -10,9 +10,7 @@ export class ElevenLabsService {
   private static client: ElevenLabs;
 
   static initialize(apiKey: string): void {
-    this.client = new ElevenLabs({
-      apiKey,
-    });
+    this.client = new ElevenLabs(apiKey);
   }
 
   static async generatePodcastAudio(script: string, language: 'en' | 'tr'): Promise<string> {
@@ -69,9 +67,7 @@ export class ElevenLabsService {
     const voiceId = this.getVoiceId(speaker, language);
     
     try {
-      const audioBuffer = await this.client.generate({
-        voice: voiceId,
-        text,
+      const audioBuffer = await this.client.textToSpeech.convert(voiceId, text, {
         model_id: 'eleven_multilingual_v2',
         voice_settings: {
           stability: 0.5,
@@ -122,8 +118,8 @@ export class ElevenLabsService {
       const voices = await this.client.voices.getAll();
       
       return voices
-        .filter(voice => voice.labels?.language === language)
-        .map(voice => ({
+        .filter((voice: any) => voice.labels?.language === language)
+        .map((voice: any) => ({
           id: voice.voice_id,
           name: voice.name,
           language: voice.labels?.language || 'unknown',
@@ -139,7 +135,8 @@ export class ElevenLabsService {
     }
 
     try {
-      const voice = await this.client.voices.get(voiceId);
+      const voices = await this.client.voices.getAll();
+      const voice = voices.find((v: any) => v.voice_id === voiceId);
       return !!voice;
     } catch (error) {
       return false;

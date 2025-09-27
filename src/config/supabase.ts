@@ -1,12 +1,29 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import dotenv from 'dotenv';
 
-const supabaseUrl = process.env.SUPABASE_URL || '';
-const supabaseKey = process.env.SUPABASE_ANON_KEY || '';
+// Load environment variables
+dotenv.config();
 
-if (!supabaseUrl || !supabaseKey) {
-  throw new Error('Missing Supabase environment variables');
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_ANON_KEY;
+
+let supabase: SupabaseClient;
+
+// For testing environment, use mock values
+if (process.env.NODE_ENV === 'test') {
+  supabase = createClient('https://mock.supabase.co', 'mock_key');
+} else {
+  if (!supabaseUrl || !supabaseKey) {
+    console.error('Missing Supabase environment variables:');
+    console.error('SUPABASE_URL:', supabaseUrl ? '✓ Set' : '✗ Missing');
+    console.error('SUPABASE_ANON_KEY:', supabaseKey ? '✓ Set' : '✗ Missing');
+    throw new Error('Missing Supabase environment variables. Please check your .env file.');
+  }
+  
+  console.log('Connecting to Supabase...');
+  supabase = createClient(supabaseUrl, supabaseKey);
+  console.log('✓ Supabase connected successfully');
 }
 
-export const supabase = createClient(supabaseUrl, supabaseKey);
-
+export { supabase };
 export default supabase;

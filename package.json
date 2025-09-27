@@ -29,6 +29,7 @@
     "@types/redis": "^4.0.10",
     "bcrypt": "^6.0.0",
     "cors": "^2.8.5",
+    "dotenv": "^17.2.2",
     "elevenlabs-node": "^2.0.3",
     "express": "^5.1.0",
     "helmet": "^8.1.0",

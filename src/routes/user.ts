@@ -1,6 +1,7 @@
 import express from 'express';
 import { UserService } from '../services/UserService';
 import { NotificationService } from '../services/NotificationService';
+import { UserModel } from '../models/User';
 
 const router = express.Router();
 
@@ -52,13 +53,13 @@ router.put('/preferences', async (req, res) => {
     const { language_preference, notification_enabled, notification_time, favorite_categories, theme_preference } = req.body;
 
     // Validate input
-    if (language_preference && !UserService.validateLanguagePreference(language_preference)) {
+    if (language_preference && !UserModel.validateLanguagePreference(language_preference)) {
       return res.status(400).json({
         error: 'Invalid language preference. Must be "en" or "tr"',
       });
     }
 
-    if (theme_preference && !UserService.validateThemePreference(theme_preference)) {
+    if (theme_preference && !UserModel.validateThemePreference(theme_preference)) {
       return res.status(400).json({
         error: 'Invalid theme preference. Must be "light", "dark", or "system"',
       });

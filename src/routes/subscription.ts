@@ -57,7 +57,7 @@ router.post('/verify', async (req, res) => {
     }
 
     // Verify receipt with App Store/Google Play
-    const verificationResult = await this.verifyReceipt(platform, receipt_data);
+    const verificationResult = await verifyReceipt(platform, receipt_data);
 
     if (!verificationResult.isValid) {
       return res.status(400).json({
@@ -153,8 +153,8 @@ router.get('/prices', async (req, res) => {
   }
 });
 
-// Helper method to verify receipts
-private async verifyReceipt(platform: string, receiptData: string): Promise<{
+// Helper function to verify receipts
+async function verifyReceipt(platform: string, receiptData: string): Promise<{
   isValid: boolean;
   subscriptionType: 'monthly' | 'yearly';
   transactionId: string;
