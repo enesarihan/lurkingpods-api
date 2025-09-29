@@ -11,7 +11,8 @@
     "build": "tsc",
     "start": "node dist/server.js",
     "test": "jest --runInBand",
-    "test:watch": "jest --watch"
+    "test:watch": "jest --watch",
+    "vercel-build": "echo 'Building for Vercel...'"
   },
   "keywords": [],
   "author": "",

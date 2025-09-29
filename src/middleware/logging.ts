@@ -127,8 +127,8 @@ export const requestLogger = (req: Request, res: Response, next: NextFunction): 
       ip: req.ip || req.connection.remoteAddress,
       userId: (req as any).user?.id,
       body: req.method !== 'GET' ? req.body : undefined,
-      query: Object.keys(req.query).length > 0 ? req.query : undefined,
-      params: Object.keys(req.params).length > 0 ? req.params : undefined,
+      query: req.query && Object.keys(req.query).length > 0 ? req.query : undefined,
+      params: req.params && Object.keys(req.params).length > 0 ? req.params : undefined,
     };
 
     Logger.log(logEntry);

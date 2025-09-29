@@ -1,4 +1,6 @@
 import express from 'express';
+import { GeminiService } from '../services/GeminiService';
+import { ElevenLabsService } from '../services/ElevenLabsService';
 import { ContentGenerationService } from '../services/ContentGenerationService';
 import { PodcastService } from '../services/PodcastService';
 import { CategoryService } from '../services/CategoryService';
@@ -182,3 +184,40 @@ router.post('/categories', async (req, res) => {
 });
 
 export default router;
+
+// Debug endpoints
+router.get('/debug/status', (req, res) => {
+  res.json({
+    gemini_initialized: GeminiService.isInitialized(),
+    elevenlabs_initialized: ElevenLabsService.isInitialized(),
+    env: {
+      GEMINI_API_KEY: !!process.env.GEMINI_API_KEY,
+      ELEVENLABS_API_KEY: !!process.env.ELEVENLABS_API_KEY,
+    },
+  });
+});
+
+router.post('/debug/generate', async (req, res) => {
+  try {
+    const { category_id = 'technology', language = 'en' } = req.body || {};
+
+    if (!GeminiService.isInitialized()) {
+      return res.status(400).json({ error: 'Gemini service not initialized' });
+    }
+
+    const script = await GeminiService.generatePodcastScript(category_id, language);
+    
+    // Dry-run: TTS çağrısı yapmadan sadece script döndürelim
+    return res.json({
+      ok: true,
+      script_preview: {
+        title: script.title,
+        description: script.description,
+        content_sample: script.content.slice(0, 160),
+        language,
+      },
+    });
+  } catch (err: any) {
+    return res.status(500).json({ error: err?.message || 'Generation failed' });
+  }
+});

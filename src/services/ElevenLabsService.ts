@@ -1,4 +1,5 @@
-import { ElevenLabs } from 'elevenlabs-node';
+/// <reference path="../types/elevenlabs.d.ts" />
+import * as ElevenLabsNode from 'elevenlabs-node';
 
 export interface AudioGenerationResult {
   audioUrl: string;
@@ -7,10 +8,15 @@ export interface AudioGenerationResult {
 }
 
 export class ElevenLabsService {
-  private static client: ElevenLabs;
+  private static client: any;
 
   static initialize(apiKey: string): void {
-    this.client = new ElevenLabs(apiKey);
+    // elevenlabs-node modülü doğrudan kullanılabilir, constructor yok
+    this.client = ElevenLabsNode;
+  }
+
+  static isInitialized(): boolean {
+    return !!this.client;
   }
 
   static async generatePodcastAudio(script: string, language: 'en' | 'tr'): Promise<string> {

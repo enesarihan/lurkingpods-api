@@ -98,8 +98,9 @@ export const validateApiKey = (req: Request, res: Response, next: NextFunction):
   const validApiKey = process.env.API_KEY;
   
   // Skip API key validation for certain routes
-  const skipRoutes = ['/health', '/auth/login', '/auth/register'];
-  if (skipRoutes.includes(req.path)) {
+  const skipRoutes = ['/health', '/auth/login', '/auth/register', '/admin/debug'];
+  const shouldSkip = skipRoutes.some(route => req.path.startsWith(route));
+  if (shouldSkip) {
     return next();
   }
   

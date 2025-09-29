@@ -17,12 +17,16 @@ export class GeminiService {
     this.genAI = new GoogleGenerativeAI(apiKey);
   }
 
+  static isInitialized(): boolean {
+    return !!this.genAI;
+  }
+
   static async generatePodcastScript(categoryId: string, language: 'en' | 'tr'): Promise<PodcastScript> {
     if (!this.genAI) {
       throw new Error('Gemini service not initialized');
     }
 
-    const model = this.genAI.getGenerativeModel({ model: 'gemini-pro' });
+    const model = this.genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
     const categoryName = this.getCategoryName(categoryId);
     const languageCode = language === 'en' ? 'English' : 'Turkish';

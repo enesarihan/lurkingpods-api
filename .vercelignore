@@ -1,0 +1,10 @@
+node_modules
+.env
+.env.local
+dist
+tests
+*.test.ts
+*.spec.ts
+test-podcast.js
+coverage
+.git
