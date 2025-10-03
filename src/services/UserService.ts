@@ -46,6 +46,15 @@ export class UserService {
       .single();
 
     if (error) {
+      // Handle unique violation for email
+      const code = (error as any)?.code as string | undefined;
+      const msg = (error as any)?.message as string | undefined;
+      if (code === '23505' || (msg && msg.includes('users_email_key'))) {
+        const duplicateError = new Error('EMAIL_TAKEN');
+        // @ts-expect-error attach code for router mapping
+        duplicateError.code = 'EMAIL_TAKEN';
+        throw duplicateError;
+      }
       throw new Error(`Failed to create user: ${error.message}`);
     }
 

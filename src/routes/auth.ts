@@ -61,8 +61,11 @@ router.post('/register', async (req, res) => {
         days_remaining: Math.ceil(((user.trial_end_date as Date).getTime() - Date.now()) / (1000 * 60 * 60 * 24)),
       },
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Registration error:', error);
+    if (error?.code === 'EMAIL_TAKEN' || error?.message === 'EMAIL_TAKEN') {
+      return res.status(409).json({ error: 'Email already in use' });
+    }
     res.status(500).json({
       error: 'Failed to create user account',
     });

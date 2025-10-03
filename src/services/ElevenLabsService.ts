@@ -48,6 +48,28 @@ export class ElevenLabsService {
     }
   }
 
+  // Returns combined audio as Buffer for external upload (e.g., Supabase Storage)
+  static async generatePodcastAudioBuffer(script: string, language: 'en' | 'tr'): Promise<Buffer> {
+    if (!this.client) {
+      throw new Error('ElevenLabs service not initialized');
+    }
+
+    try {
+      const segments = this.parseScriptSegments(script);
+      const audioSegments: Buffer[] = [];
+
+      for (const segment of segments) {
+        const audioBuffer = await this.generateSegmentAudio(segment.text, segment.speaker, language);
+        audioSegments.push(audioBuffer);
+      }
+
+      const combinedAudio = this.combineAudioSegments(audioSegments);
+      return combinedAudio;
+    } catch (error) {
+      throw new Error(`Failed to generate audio buffer: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
   private static parseScriptSegments(script: string): Array<{ text: string; speaker: number }> {
     const segments: Array<{ text: string; speaker: number }> = [];
     const lines = script.split('\n').filter(line => line.trim());

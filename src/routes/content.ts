@@ -1,6 +1,9 @@
 import express from 'express';
 import { PodcastService } from '../services/PodcastService';
 import { CategoryService } from '../services/CategoryService';
+import { GeminiService } from '../services/GeminiService';
+import { ElevenLabsService } from '../services/ElevenLabsService';
+import supabase from '../config/supabase';
 
 const router = express.Router();
 
@@ -39,6 +42,59 @@ router.get('/daily-mix', async (req, res) => {
     res.status(500).json({
       error: 'Failed to get daily mix',
     });
+  }
+});
+
+// POST /content/generate-today (TR) → Generate news podcast and upload audio to Supabase Storage
+router.post('/generate-today', async (req, res) => {
+  try {
+    const language: 'en' | 'tr' = 'tr';
+    const categoryId = 'current_affairs';
+
+    // 1) Generate script with Gemini
+    const script = await GeminiService.generatePodcastScript(categoryId, language);
+
+    // 2) Generate audio buffer with ElevenLabs
+    const audioBuffer = await ElevenLabsService.generatePodcastAudioBuffer(script.content, language);
+
+    // 3) Upload to Supabase Storage
+    const fileName = `podcasts/${Date.now()}_today_tr.mp3`;
+    const { data: uploadData, error: uploadError } = await (supabase as any).storage
+      .from('lurkingpods')
+      .upload(fileName, audioBuffer, {
+        cacheControl: '3600',
+        upsert: false,
+        contentType: 'audio/mpeg',
+      });
+
+    if (uploadError) {
+      throw new Error(`Upload failed: ${uploadError.message}`);
+    }
+
+    const { data: publicUrlData } = await (supabase as any).storage
+      .from('lurkingpods')
+      .getPublicUrl(fileName);
+
+    const audioUrl = publicUrlData?.publicUrl;
+
+    // 4) Save podcast row
+    const podcast = await PodcastService.createPodcast({
+      category_id: categoryId,
+      title: script.title,
+      description: script.description,
+      script_content: script.content,
+      audio_url: audioUrl,
+      audio_duration: script.duration,
+      language,
+      speaker_1_voice_id: script.speaker_1_voice_id,
+      speaker_2_voice_id: script.speaker_2_voice_id,
+      quality_score: script.quality_score,
+    } as any);
+
+    res.status(201).json({ podcast, audioUrl });
+  } catch (error) {
+    console.error('Generate today error:', error);
+    res.status(500).json({ error: 'Failed to generate today podcast' });
   }
 });
 
