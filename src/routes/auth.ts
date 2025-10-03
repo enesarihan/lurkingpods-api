@@ -4,6 +4,20 @@ import { SubscriptionService } from '../services/SubscriptionService';
 
 const router = express.Router();
 
+// Normalize Supabase date fields which may arrive as strings
+function normalizeUserDates(u: any) {
+  if (!u) return u;
+  const toDate = (v: any) => (v ? new Date(v as any) : v);
+  return {
+    ...u,
+    created_at: toDate(u.created_at),
+    updated_at: toDate(u.updated_at),
+    trial_start_date: toDate(u.trial_start_date),
+    trial_end_date: toDate(u.trial_end_date),
+    subscription_end_date: toDate(u.subscription_end_date),
+  };
+}
+
 // POST /auth/register
 router.post('/register', async (req, res) => {
   try {
@@ -17,11 +31,12 @@ router.post('/register', async (req, res) => {
     }
 
     // Create user
-    const user = await UserService.createUser({
+    const createdUser = await UserService.createUser({
       email,
       password,
       language_preference,
     });
+    const user = normalizeUserDates(createdUser);
 
     // Get subscription status
     const subscriptionStatus = await SubscriptionService.getSubscriptionStatus(user.id);
@@ -31,8 +46,8 @@ router.post('/register', async (req, res) => {
         id: user.id,
         email: user.email,
         language_preference: user.language_preference,
-        trial_start_date: user.trial_start_date,
-        trial_end_date: user.trial_end_date,
+        trial_start_date: (user.trial_start_date as Date).toISOString(),
+        trial_end_date: (user.trial_end_date as Date).toISOString(),
         subscription_status: user.subscription_status,
       },
       session: {
@@ -41,9 +56,9 @@ router.post('/register', async (req, res) => {
       },
       trial_info: {
         is_trial: true,
-        trial_start_date: user.trial_start_date,
-        trial_end_date: user.trial_end_date,
-        days_remaining: Math.ceil((user.trial_end_date.getTime() - Date.now()) / (1000 * 60 * 60 * 24)),
+        trial_start_date: (user.trial_start_date as Date).toISOString(),
+        trial_end_date: (user.trial_end_date as Date).toISOString(),
+        days_remaining: Math.ceil(((user.trial_end_date as Date).getTime() - Date.now()) / (1000 * 60 * 60 * 24)),
       },
     });
   } catch (error) {
@@ -67,16 +82,17 @@ router.post('/login', async (req, res) => {
     }
 
     // Authenticate user
-    const user = await UserService.authenticateUser(email, password);
+    const rawUser = await UserService.authenticateUser(email, password);
 
-    if (!user) {
+    if (!rawUser) {
       return res.status(401).json({
         error: 'Invalid email or password',
       });
     }
+    const user = normalizeUserDates(rawUser);
 
     // Check trial status
-    const trialStatus = await UserService.checkTrialStatus(user);
+    const trialStatus = await UserService.checkTrialStatus(user as any);
 
     // Get subscription status
     const subscriptionStatus = await SubscriptionService.getSubscriptionStatus(user.id);
@@ -86,8 +102,8 @@ router.post('/login', async (req, res) => {
         id: user.id,
         email: user.email,
         language_preference: user.language_preference,
-        trial_start_date: user.trial_start_date,
-        trial_end_date: user.trial_end_date,
+        trial_start_date: (user.trial_start_date as Date).toISOString(),
+        trial_end_date: (user.trial_end_date as Date).toISOString(),
         subscription_status: user.subscription_status,
       },
       session: {
@@ -96,9 +112,9 @@ router.post('/login', async (req, res) => {
       },
       trial_info: {
         is_trial: user.subscription_status === 'trial',
-        trial_start_date: user.trial_start_date,
-        trial_end_date: user.trial_end_date,
-        days_remaining: Math.ceil((user.trial_end_date.getTime() - Date.now()) / (1000 * 60 * 60 * 24)),
+        trial_start_date: (user.trial_start_date as Date).toISOString(),
+        trial_end_date: (user.trial_end_date as Date).toISOString(),
+        days_remaining: Math.ceil(((user.trial_end_date as Date).getTime() - Date.now()) / (1000 * 60 * 60 * 24)),
         is_expired: trialStatus.isExpired,
         has_access: trialStatus.hasAccess,
       },
@@ -122,13 +138,14 @@ router.get('/me', async (req, res) => {
       });
     }
 
-    const user = await UserService.getUserById(userId);
+    const rawUser = await UserService.getUserById(userId);
 
-    if (!user) {
+    if (!rawUser) {
       return res.status(404).json({
         error: 'User not found',
       });
     }
+    const user = normalizeUserDates(rawUser);
 
     // Get subscription status
     const subscriptionStatus = await SubscriptionService.getSubscriptionStatus(user.id);
@@ -138,8 +155,8 @@ router.get('/me', async (req, res) => {
         id: user.id,
         email: user.email,
         language_preference: user.language_preference,
-        trial_start_date: user.trial_start_date,
-        trial_end_date: user.trial_end_date,
+        trial_start_date: (user.trial_start_date as Date).toISOString(),
+        trial_end_date: (user.trial_end_date as Date).toISOString(),
         subscription_status: user.subscription_status,
         notification_enabled: user.notification_enabled,
         favorite_categories: user.favorite_categories,
