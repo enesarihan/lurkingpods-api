@@ -49,7 +49,17 @@ router.get('/daily-mix', async (req, res) => {
 router.post('/generate-today', async (req, res) => {
   try {
     const language: 'en' | 'tr' = 'tr';
-    const categoryId = 'current_affairs';
+    // Resolve category UUID by slug/name
+    const categorySlug = 'current_affairs';
+    const { data: catRow, error: catErr } = await (supabase as any)
+      .from('categories')
+      .select('id')
+      .eq('name', categorySlug)
+      .single();
+    if (catErr || !catRow?.id) {
+      throw new Error(`Category not found for name '${categorySlug}'`);
+    }
+    const categoryId: string = catRow.id;
 
     // 1) Generate script with Gemini
     const script = await GeminiService.generatePodcastScript(categoryId, language);
