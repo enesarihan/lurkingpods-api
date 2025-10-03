@@ -120,18 +120,29 @@ export class ElevenLabsService {
   }
 
   private static getVoiceId(speaker: number, language: 'en' | 'tr'): string {
+    // Prefer env-configured voice IDs from your ElevenLabs account
+    // Set these in Vercel: ELEVENLABS_VOICE_ID_TR / ELEVENLABS_VOICE_ID_EN (optionally *_ALT for speaker 2)
+    const envVoiceEnPrimary = process.env.ELEVENLABS_VOICE_ID_EN || '';
+    const envVoiceEnAlt = process.env.ELEVENLABS_VOICE_ID_EN_ALT || envVoiceEnPrimary;
+    const envVoiceTrPrimary = process.env.ELEVENLABS_VOICE_ID_TR || '';
+    const envVoiceTrAlt = process.env.ELEVENLABS_VOICE_ID_TR_ALT || envVoiceTrPrimary;
+
     const voiceMap: Record<string, Record<number, string>> = {
       en: {
-        1: 'voice_1_en',
-        2: 'voice_2_en',
+        1: envVoiceEnPrimary,
+        2: envVoiceEnAlt,
       },
       tr: {
-        1: 'voice_1_tr',
-        2: 'voice_2_tr',
+        1: envVoiceTrPrimary,
+        2: envVoiceTrAlt,
       },
     };
 
-    return voiceMap[language]?.[speaker] || 'default_voice';
+    const id = voiceMap[language]?.[speaker];
+    if (!id) {
+      throw new Error(`Missing ElevenLabs voice ID for ${language} speaker ${speaker}. Set ELEVENLABS_VOICE_ID_${language.toUpperCase()}${speaker === 2 ? '_ALT' : ''}.`);
+    }
+    return id;
   }
 
   private static combineAudioSegments(segments: Buffer[]): Buffer {
