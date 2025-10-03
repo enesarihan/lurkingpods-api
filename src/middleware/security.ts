@@ -14,6 +14,7 @@ export const corsOptions = {
       'https://lurkingpods.com',
       'https://www.lurkingpods.com',
       'https://api.lurkingpods.com',
+      'https://lurkingpods-api.vercel.app',
     ];
     
     if (allowedOrigins.includes(origin)) {
