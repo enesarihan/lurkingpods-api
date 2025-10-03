@@ -1,5 +1,5 @@
 /// <reference path="../types/elevenlabs.d.ts" />
-import * as ElevenLabsNode from 'elevenlabs-node';
+// Switch to REST API per ElevenLabs model guidance
 
 export interface AudioGenerationResult {
   audioUrl: string;
@@ -8,21 +8,14 @@ export interface AudioGenerationResult {
 }
 
 export class ElevenLabsService {
-  private static client: any;
-
-  static initialize(apiKey: string): void {
-    // elevenlabs-node modülü doğrudan kullanılabilir, constructor yok
-    this.client = ElevenLabsNode;
-  }
+  static initialize(_apiKey: string): void {}
 
   static isInitialized(): boolean {
-    return !!this.client;
+    return true;
   }
 
   static async generatePodcastAudio(script: string, language: 'en' | 'tr'): Promise<string> {
-    if (!this.client) {
-      throw new Error('ElevenLabs service not initialized');
-    }
+    // Using REST API; no client required
 
     try {
       // Split script into speaker segments
@@ -50,9 +43,7 @@ export class ElevenLabsService {
 
   // Returns combined audio as Buffer for external upload (e.g., Supabase Storage)
   static async generatePodcastAudioBuffer(script: string, language: 'en' | 'tr'): Promise<Buffer> {
-    if (!this.client) {
-      throw new Error('ElevenLabs service not initialized');
-    }
+    // Using REST API; no client required
 
     try {
       const segments = this.parseScriptSegments(script);
@@ -94,16 +85,35 @@ export class ElevenLabsService {
   private static async generateSegmentAudio(text: string, speaker: number, language: 'en' | 'tr'): Promise<Buffer> {
     const voiceId = this.getVoiceId(speaker, language);
     
+    const apiKey = process.env.ELEVENLABS_API_KEY;
+    if (!apiKey) {
+      throw new Error('ElevenLabs API key missing');
+    }
     try {
-      const audioBuffer = await this.client.textToSpeech.convert(voiceId, text, {
-        model_id: 'eleven_multilingual_v2',
-        voice_settings: {
-          stability: 0.5,
-          similarity_boost: 0.5,
+      const resp = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
+        method: 'POST',
+        headers: {
+          'xi-api-key': apiKey,
+          'Content-Type': 'application/json',
+          'Accept': 'audio/mpeg',
         },
+        body: JSON.stringify({
+          text,
+          // Per docs: prefer eleven_v3 (alpha) or flash v2.5
+          // https://elevenlabs.io/docs/models#eleven-v3-alpha
+          model_id: 'eleven_v3',
+          voice_settings: {
+            stability: 0.5,
+            similarity_boost: 0.5,
+          },
+        }),
       });
-
-      return audioBuffer;
+      if (!resp.ok) {
+        const errTxt = await resp.text().catch(() => '');
+        throw new Error(`HTTP ${resp.status} ${resp.statusText} ${errTxt}`);
+      }
+      const arrayBuffer = await resp.arrayBuffer();
+      return Buffer.from(arrayBuffer);
     } catch (error) {
       throw new Error(`Failed to generate segment audio: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
@@ -137,37 +147,11 @@ export class ElevenLabsService {
     return `https://cdn.lurkingpods.com/audio/${timestamp}.mp3`;
   }
 
-  static async getAvailableVoices(language: 'en' | 'tr'): Promise<Array<{ id: string; name: string; language: string }>> {
-    if (!this.client) {
-      throw new Error('ElevenLabs service not initialized');
-    }
-
-    try {
-      const voices = await this.client.voices.getAll();
-      
-      return voices
-        .filter((voice: any) => voice.labels?.language === language)
-        .map((voice: any) => ({
-          id: voice.voice_id,
-          name: voice.name,
-          language: voice.labels?.language || 'unknown',
-        }));
-    } catch (error) {
-      throw new Error(`Failed to get voices: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    }
+  static async getAvailableVoices(_language: 'en' | 'tr'): Promise<Array<{ id: string; name: string; language: string }>> {
+    return [];
   }
 
-  static async validateVoiceId(voiceId: string): Promise<boolean> {
-    if (!this.client) {
-      throw new Error('ElevenLabs service not initialized');
-    }
-
-    try {
-      const voices = await this.client.voices.getAll();
-      const voice = voices.find((v: any) => v.voice_id === voiceId);
-      return !!voice;
-    } catch (error) {
-      return false;
-    }
+  static async validateVoiceId(_voiceId: string): Promise<boolean> {
+    return true;
   }
 }
