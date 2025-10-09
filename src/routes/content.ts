@@ -51,13 +51,31 @@ router.post('/generate-today', async (req, res) => {
     const language: 'en' | 'tr' = 'tr';
     // Resolve category UUID by slug/name
     const categorySlug = 'current_affairs';
-    const { data: catRow, error: catErr } = await (supabase as any)
+    let { data: catRow, error: catErr } = await (supabase as any)
       .from('categories')
       .select('id')
       .eq('name', categorySlug)
       .single();
     if (catErr || !catRow?.id) {
-      throw new Error(`Category not found for name '${categorySlug}'`);
+      // Fallback: create category if not exists
+      const insertPayload = {
+        name: categorySlug,
+        display_name_en: 'Current Affairs',
+        display_name_tr: 'Gündem',
+        description_en: 'Daily news and current events',
+        description_tr: 'Günlük haberler ve güncel olaylar',
+        color_hex: '#1E90FF',
+        is_active: true,
+      };
+      const { data: createdCat, error: createErr } = await (supabase as any)
+        .from('categories')
+        .insert(insertPayload)
+        .select('id')
+        .single();
+      if (createErr || !createdCat?.id) {
+        throw new Error(`Category not found for name '${categorySlug}'`);
+      }
+      catRow = createdCat;
     }
     const categoryId: string = catRow.id;
 
