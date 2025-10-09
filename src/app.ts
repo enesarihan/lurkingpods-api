@@ -49,13 +49,13 @@ app.use(sanitizeRequest);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Global rate limiting
-app.use(generalRateLimit.middleware());
+// Global rate limiting (disabled)
+// app.use(generalRateLimit.middleware());
 
-// Routes with specific rate limiting
-app.use('/auth', authRateLimit.middleware(), authRoutes);
-app.use('/content', contentRateLimit.middleware(), optionalAuth, contentRoutes);
-app.use('/subscription', subscriptionRateLimit.middleware(), authenticateUser, subscriptionRoutes);
+// Routes with specific rate limiting (disabled)
+app.use('/auth', /* authRateLimit.middleware(), */ authRoutes);
+app.use('/content', /* contentRateLimit.middleware(), */ optionalAuth, contentRoutes);
+app.use('/subscription', /* subscriptionRateLimit.middleware(), */ authenticateUser, subscriptionRoutes);
 app.use('/user', authenticateUser, userRoutes);
 // Temporarily bypass auth for testing
 app.use('/admin', adminRoutes);
