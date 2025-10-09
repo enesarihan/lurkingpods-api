@@ -29,7 +29,7 @@ export class ElevenLabsService {
         audioSegments.push(audioBuffer);
       }
 
-      // Combine audio segments
+      // Combine audio segments (concatenate buffers for single podcast file)
       const combinedAudio = this.combineAudioSegments(audioSegments);
       
       // Upload to CDN (placeholder - would use actual CDN service)
@@ -99,9 +99,9 @@ export class ElevenLabsService {
         },
         body: JSON.stringify({
           text,
-          // Per docs: prefer eleven_v3 (alpha) or flash v2.5
+          // Per docs: use Flash v2.5 for faster long-form; or switch to eleven_v3 if needed
           // https://elevenlabs.io/docs/models#eleven-v3-alpha
-          model_id: 'eleven_v3',
+          model_id: 'eleven_flash_v2_5',
           voice_settings: {
             stability: 0.5,
             similarity_boost: 0.5,
@@ -146,9 +146,12 @@ export class ElevenLabsService {
   }
 
   private static combineAudioSegments(segments: Buffer[]): Buffer {
-    // Placeholder implementation - would use actual audio processing library
-    // For now, return the first segment as a placeholder
-    return segments[0] || Buffer.alloc(0);
+    if (!segments || segments.length === 0) return Buffer.alloc(0);
+    try {
+      return Buffer.concat(segments);
+    } catch {
+      return segments[0];
+    }
   }
 
   private static async uploadToCDN(audioBuffer: Buffer): Promise<string> {
